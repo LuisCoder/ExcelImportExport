@@ -9,10 +9,16 @@ public class ExcelSerializer
 {
     private const string DefaultSheetName = "Sheet1";
 
-    public List<T> ImportFromExcel<T>(string filePath) where T : new()
+    public List<T> ImportFromExcel<T>(string filepath) where T : new()
     {
-        using var fs = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
-        using var document = SpreadsheetDocument.Open(fs, false);
+        using var stream = new FileStream(filepath, FileMode.Open, FileAccess.Read, FileShare.Write);
+        var result = ImportFromExcel<T>(stream);
+        return result;
+    }
+
+    public List<T> ImportFromExcel<T>(Stream stream) where T : new()
+    {
+        using var document = SpreadsheetDocument.Open(stream, false);
 
         var worksheetPart = document.WorkbookPart!.WorksheetParts.First();
         var sheet = worksheetPart.Worksheet;
@@ -61,9 +67,16 @@ public class ExcelSerializer
 
     public void ExportToExcel<T>(List<T> list, string filePath, List<string>? customHeaders = null)
     {
+        //using var stream = new FileStream(filePath, FileMode.Create, FileAccess.Write);
+        using var stream = new FileStream(filePath, FileMode.Create, FileAccess.ReadWrite, FileShare.Read);
+        ExportToExcel(list, stream, customHeaders);
+    }
+
+    public void ExportToExcel<T>(List<T> list, Stream stream, List<string>? customHeaders = null)
+    {
         if (list == null || !list.Any()) throw new ArgumentException("The list is empty.", nameof(list));
 
-        using var document = SpreadsheetDocument.Create(filePath, SpreadsheetDocumentType.Workbook);
+        using var document = SpreadsheetDocument.Create(stream, SpreadsheetDocumentType.Workbook);
         var workbookPart = document.AddWorkbookPart();
         workbookPart.Workbook = new Workbook();
 
